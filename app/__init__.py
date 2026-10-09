@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 
 from app.config import Config
 from app.extensions import cors, db, jwt, migrate
+from app.routes.test_routes import test_bp
 
 import app.models
 
@@ -24,6 +25,9 @@ def create_app(config_class=Config):
             }
         }
     )
+
+    # Register temporary database testing routes.
+    app.register_blueprint(test_bp)
 
     @app.get("/api/health")
     def health_check():
