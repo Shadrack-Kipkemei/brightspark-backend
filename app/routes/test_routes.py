@@ -11,6 +11,7 @@ as the backend develops.
 from flask import Blueprint, jsonify
 
 from app.models import Branch, User
+from app.permissions.auth import role_required
 
 
 test_bp = Blueprint(
@@ -54,4 +55,17 @@ def test_database():
             }
             for branch in branches
         ]
+    })
+
+
+@test_bp.get("/admin-only")
+@role_required("admin")
+def admin_only_test():
+    """
+    Temporary endpoint used to verify admin authorization.
+    """
+
+    return jsonify({
+        "success": True,
+        "message": "You have administrator access."
     })
