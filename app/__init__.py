@@ -5,6 +5,8 @@ from app.extensions import cors, db, jwt, migrate
 from app.routes.auth_routes import auth_bp
 from app.routes.user_routes import users_bp
 from app.routes.test_routes import test_bp
+from app.routes.branch_routes import branches_bp
+from app.routes.product_routes import products_bp
 
 import app.models
 
@@ -31,6 +33,8 @@ def create_app(config_class=Config):
     # Register authentication routes.
     app.register_blueprint(auth_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(branches_bp)
+    app.register_blueprint(products_bp)
 
     # Register temporary database testing routes.
     app.register_blueprint(test_bp)
