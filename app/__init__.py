@@ -3,6 +3,7 @@ from flask import Flask, jsonify
 from app.config import Config
 from app.extensions import cors, db, jwt, migrate
 from app.routes.auth_routes import auth_bp
+from app.routes.user_routes import users_bp
 from app.routes.test_routes import test_bp
 
 import app.models
@@ -29,6 +30,7 @@ def create_app(config_class=Config):
 
     # Register authentication routes.
     app.register_blueprint(auth_bp)
+    app.register_blueprint(users_bp)
 
     # Register temporary database testing routes.
     app.register_blueprint(test_bp)
