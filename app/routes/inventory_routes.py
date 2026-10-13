@@ -698,7 +698,7 @@ def get_low_stock():
                             Decimal("0")
                         )
                     )
-                )
+                })
 
         else:
 
