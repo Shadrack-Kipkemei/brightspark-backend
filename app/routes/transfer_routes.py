@@ -18,6 +18,7 @@ from decimal import Decimal, InvalidOperation
 import uuid
 
 from flask import Blueprint, jsonify, request
+from sqlalchemy import or_
 from flask_jwt_extended import get_jwt_identity
 
 from app.extensions import db
@@ -368,7 +369,7 @@ def get_transfers():
             }), 400
 
         query = query.filter(
-            db.or_(
+            or_(
                 StockTransfer.source_branch_id == current_branch_id,
                 StockTransfer.destination_branch_id == current_branch_id
             )
@@ -376,7 +377,7 @@ def get_transfers():
 
     elif requested_branch_id:
         query = query.filter(
-            db.or_(
+            or_(
                 StockTransfer.source_branch_id == requested_branch_id,
                 StockTransfer.destination_branch_id == requested_branch_id
             )
