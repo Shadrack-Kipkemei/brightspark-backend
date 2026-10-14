@@ -10,6 +10,7 @@ from app.routes.product_routes import products_bp
 from app.routes.inventory_routes import inventory_bp
 from app.routes.transfer_routes import transfers_bp
 from app.routes.sale_routes import sales_bp
+from app.routes.refund_routes import refund_bp
 
 import app.models
 
@@ -41,6 +42,7 @@ def create_app(config_class=Config):
     app.register_blueprint(inventory_bp)
     app.register_blueprint(transfers_bp)
     app.register_blueprint(sales_bp)
+    app.register_blueprint(refund_bp)
 
     # Register temporary database testing routes.
     app.register_blueprint(test_bp)
