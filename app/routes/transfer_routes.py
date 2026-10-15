@@ -36,6 +36,9 @@ from app.permissions.auth import (
     get_current_role,
     role_required
 )
+from app.services.notification_service import (
+    check_product_stock_notification
+)
 
 
 transfers_bp = Blueprint(
@@ -333,6 +336,15 @@ def create_transfer():
         )
 
         db.session.add(transfer_item)
+
+        check_product_stock_notification(
+            product_id,
+            source_branch_id
+        )
+        check_product_stock_notification(
+            product_id,
+            destination_branch_id
+        )
 
     db.session.commit()
 

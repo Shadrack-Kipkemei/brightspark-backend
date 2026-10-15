@@ -42,6 +42,9 @@ from app.permissions.auth import (
     get_current_role,
     get_current_branch_id
 )
+from app.services.notification_service import (
+    check_product_stock_notification
+)
 
 
 refund_bp = Blueprint(
@@ -465,6 +468,11 @@ def create_refund():
             )
 
             db.session.add(movement)
+
+            check_product_stock_notification(
+                product_id,
+                branch_id
+            )
 
     # -----------------------------------------------------
     # Commit

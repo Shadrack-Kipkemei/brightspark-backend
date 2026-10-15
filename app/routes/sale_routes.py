@@ -42,6 +42,9 @@ from app.permissions.auth import (
     get_current_role,
     role_required
 )
+from app.services.notification_service import (
+    check_product_stock_notification
+)
 
 
 sales_bp = Blueprint(
@@ -739,6 +742,11 @@ def create_sale():
             )
 
             db.session.add(sale_payment)
+
+        check_product_stock_notification(
+            product_id,
+            branch_id
+        )
 
         db.session.commit()
 
