@@ -83,5 +83,11 @@ class Product(db.Model):
         lazy=True
     )
 
+    notifications = db.relationship(
+        "Notification",
+        back_populates="product",
+        lazy=True
+    )
+
     def __repr__(self):
         return f"<Product {self.name}>"

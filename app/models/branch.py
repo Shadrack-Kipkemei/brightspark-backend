@@ -52,5 +52,11 @@ class Branch(db.Model):
         lazy=True
     )
 
+    notifications = db.relationship(
+        "Notification",
+        back_populates="branch",
+        lazy=True
+    )
+
     def __repr__(self):
         return f"<Branch {self.name}>"

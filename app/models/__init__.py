@@ -18,3 +18,6 @@ from app.models.expense import Expense
 
 # Stock transfer models
 from app.models.stock_transfer import StockTransfer, StockTransferItem
+
+# Notification model
+from app.models.notification import Notification
