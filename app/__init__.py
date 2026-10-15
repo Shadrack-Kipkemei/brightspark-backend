@@ -13,6 +13,7 @@ from app.routes.sale_routes import sales_bp
 from app.routes.refund_routes import refund_bp
 from app.routes.expense_routes import expense_bp
 from app.routes.report_routes import report_bp
+from app.routes.dashboard_routes import dashboard_bp
 
 import app.models
 
@@ -47,6 +48,7 @@ def create_app(config_class=Config):
     app.register_blueprint(refund_bp)
     app.register_blueprint(expense_bp)
     app.register_blueprint(report_bp)
+    app.register_blueprint(dashboard_bp)
 
     # Register temporary database testing routes.
     app.register_blueprint(test_bp)
