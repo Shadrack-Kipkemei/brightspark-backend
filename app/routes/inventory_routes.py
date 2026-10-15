@@ -35,6 +35,9 @@ from app.permissions.auth import (
     get_current_branch_id,
     get_current_role
 )
+from app.services.notification_service import (
+    check_product_stock_notification
+)
 
 
 inventory_bp = Blueprint(
@@ -381,6 +384,11 @@ def receive_stock():
     )
 
     db.session.add(movement)
+
+    check_product_stock_notification(
+        product_id,
+        branch_id
+    )
 
     db.session.commit()
 
