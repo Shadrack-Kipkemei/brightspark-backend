@@ -101,14 +101,30 @@ def create_product():
     Only administrators can create products.
     """
 
-    data = request.get_json() or {}
+    #-----------------------------------------------------
+    # Form data and image upload
+    #-----------------------------------------------------
+
+    data = request.form
 
     name = str(data.get("name", "")).strip()
     sku = str(data.get("sku", "")).strip().upper()
     category = str(data.get("category", "")).strip()
     description = data.get("description")
     unit = str(data.get("unit", "Piece")).strip()
-    image_url = data.get("image_url")
+
+    image_file = request.files.get("image")
+    image_url = str(data.get("image_url", "")).strip() or None
+
+    # Local upload takes priority over internet URL
+    if image_file:
+        try:
+            image_url = save_product_image(image_file)
+        except ValueError as error:
+            return jsonify({
+                "success": False,
+                "message": str(error)
+            }), 400
 
     # -----------------------------------------------------
     # Required fields
@@ -376,7 +392,9 @@ def update_product(product_id):
             "message": "Product not found."
         }), 404
 
-    data = request.get_json() or {}
+    data = request.form
+    image_file = request.files.get("image")
+    image_url = str(data.get("image_url", "")).strip()
 
     # -----------------------------------------------------
     # Name
@@ -482,8 +500,17 @@ def update_product(product_id):
     # Image URL
     # -----------------------------------------------------
 
-    if "image_url" in data:
-        product.image_url = data["image_url"]
+    if image_file:
+        try:
+            product.image_url = save_product_image(image_file)
+        except ValueError as error:
+            return jsonify({
+                "success": False,
+                "message": str(error)
+            }), 400
+
+    elif image_url:
+        product.image_url = image_url
 
     db.session.commit()
 
