@@ -12,6 +12,7 @@ flask-cors = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
 psycopg = {extras = ["binary"], version = "*"}
+pillow = "*"
 
 [dev-packages]
 

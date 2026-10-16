@@ -70,3 +70,17 @@ class Config:
     #
     JWT_HEADER_NAME = "Authorization"
     JWT_HEADER_TYPE = "Bearer"
+
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024
+
+    UPLOAD_FOLDER = os.path.join(
+        os.getcwd(),
+        "uploads"
+    )
+
+    ALLOWED_IMAGE_EXTENSIONS = {
+        "jpg",
+        "jpeg",
+        "png",
+        "webp"
+    }
