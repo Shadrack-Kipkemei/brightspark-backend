@@ -94,3 +94,33 @@ def save_product_image(file):
     file.save(file_path)
 
     return f"/uploads/products/{safe_filename}"
+
+def delete_product_image_file(image_url):
+    """
+    Delete a locally stored product image.
+    
+    External internet images are ignored because BrightSpark must never attempt to delete files from another website.
+    """
+
+    if not image_url:
+        return
+
+    if not image_url.startswith("/uploads/products/"):
+        return
+
+    filename = os.path.basename(image_url)
+
+    if not filename:
+        return
+
+    upload_folder = os.path.join(
+        current_app.config["UPLOAD_FOLDER"],
+        "products"
+    )
+    file_path = os.path.join(
+        upload_folder,
+        filename
+    )
+
+    if os.path.isfile(file_path):
+        os.remove(file_path)

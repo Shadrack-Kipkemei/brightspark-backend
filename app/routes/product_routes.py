@@ -15,7 +15,11 @@ from sqlalchemy import or_
 from app.extensions import db
 from app.models import Product
 from app.permissions.auth import role_required
-from app.services.image_service import save_product_image
+from app.services.image_service import (
+    save_product_image, 
+    delete_product_image_file
+)
+from urllib.parse import urlparse
 
 
 products_bp = Blueprint(
@@ -40,6 +44,22 @@ ALLOWED_UNITS = {
     "Pair",
     "Set",
 }
+
+def is_valid_image_url(url):
+    """
+    Validate an external image URL.
+    """
+
+    if not url:
+        return True
+    try:
+        parsed = urlparse(url)
+        return(
+            parsed.scheme in {"http", "https"}
+            and bool(parsed.netloc)
+        )
+    except Exception:
+        return False
 
 
 def serialize_product(product):
@@ -115,6 +135,17 @@ def create_product():
 
     image_file = request.files.get("image")
     image_url = str(data.get("image_url", "")).strip() or None
+
+    if image_url and not is_valid_image_url(
+        image_url
+    ):
+        return jsonify({
+            "success": False,
+            "message": (
+                "Invalid image URL. "
+                "Use a valid HTTP or HTTPS URL."
+            )
+        }), 400
 
     # Local upload takes priority over internet URL
     if image_file:
@@ -394,7 +425,6 @@ def update_product(product_id):
 
     data = request.form
     image_file = request.files.get("image")
-    image_url = str(data.get("image_url", "")).strip()
 
     # -----------------------------------------------------
     # Name
@@ -500,17 +530,45 @@ def update_product(product_id):
     # Image URL
     # -----------------------------------------------------
 
+    image_file = request.files.get("image")
+    new_image_url = str(data.get("image_url", "")).strip()
+    
     if image_file:
+        old_image_url = product.image_url
+
         try:
-            product.image_url = save_product_image(image_file)
+            new_image_url = save_product_image(image_file)
         except ValueError as error:
             return jsonify({
                 "success": False,
                 "message": str(error)
             }), 400
 
-    elif image_url:
-        product.image_url = image_url
+        # Delete previous local image after
+        # successfully saving the new one.
+        if old_image_url:
+            delete_product_image_file(old_image_url)
+        product.image_url = new_image_url
+
+    # -----------------------------------------------------
+    # Internet Image URL
+    # -----------------------------------------------------
+
+    elif new_image_url:
+
+        if not is_valid_image_url(new_image_url):
+            return jsonify({
+                "success": False,
+                "message": (
+                    "Invalid image URL. "
+                    "Use a valid HTTP or HTTPS URL."
+                )
+            }), 400
+        old_image_url = product.image_url
+
+        # Only delete old local image.
+        delete_product_image_file(old_image_url)
+        product.image_url = new_image_url
 
     db.session.commit()
 
@@ -518,6 +576,47 @@ def update_product(product_id):
         "success": True,
         "message": "Product updated successfully.",
         "product": serialize_product(product)
+    }), 200
+
+@products_bp.delete("/<string:product_id>/image")
+@role_required("admin")
+def delete_product_image(product_id):
+    """
+    Delete a product image.
+    
+    Local BrightSpark images are physically deleted.
+    External internet images are only removed from the database reference.
+    """
+    product = Product.query.get(product_id)
+
+    if not product:
+        return jsonify({
+            "success": False,
+            "message": "Product not found."
+        }), 404
+
+    if not product.image_url:
+        return jsonify({
+            "succcess": False,
+            "message": (
+                "This product does not have an image."
+            )
+        }), 400
+
+    # Delete the physical file only when
+    # the image belongs to BrightSpark.
+    delete_product_image_file(product.image_url)
+
+    product.image_url = None
+    db.session.commit()
+    return jsonify({
+        "success": True,
+        "message": (
+            "Product image deleted successfully."
+        ),
+        "product": serialize_product(
+            product
+        )
     }), 200
 
 
