@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 
 from app.config import Config
 from app.extensions import cors, db, jwt, migrate
@@ -62,6 +62,13 @@ def create_app(config_class=Config):
                 "success": True,
                 "message": "BrightSpark backend is running",
             }
+        )
+
+    @app.get("/uploads/<path:filename>")
+    def uploaded_file(filename):
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            filename
         )
 
     return app

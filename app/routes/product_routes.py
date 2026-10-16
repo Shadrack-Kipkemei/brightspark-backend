@@ -15,6 +15,7 @@ from sqlalchemy import or_
 from app.extensions import db
 from app.models import Product
 from app.permissions.auth import role_required
+from app.services.image_service import save_product_image
 
 
 products_bp = Blueprint(
