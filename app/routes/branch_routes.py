@@ -171,3 +171,38 @@ def deactivate_branch(branch_id):
         "message": "Branch deactivated successfully.",
         "branch": serialize_branch(branch)
     }), 200
+
+
+
+# =========================================================
+# PUBLIC ACTIVE BRANCHES
+# =========================================================
+
+@branches_bp.get("/public")
+def get_public_branches():
+    """
+    Return active branches for the public storefront.
+
+    No login is required.
+    Only basic branch information is exposed.
+    """
+
+    branches = Branch.query.filter_by(
+        is_active=True
+    ).order_by(
+        Branch.name.asc()
+    ).all()
+
+    return jsonify({
+        "success": True,
+        "count": len(branches),
+        "branches": [
+            {
+                "id": branch.id,
+                "name": branch.name,
+                "location": branch.location,
+                "code": branch.code,
+            }
+            for branch in branches
+        ]
+    }), 200

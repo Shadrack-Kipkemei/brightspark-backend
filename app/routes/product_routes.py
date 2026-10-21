@@ -13,7 +13,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import or_
 
 from app.extensions import db
-from app.models import Product
+from app.models import Product, Branch, InventoryBatch
 from app.permissions.auth import role_required
 from app.services.image_service import (
     save_product_image, 
@@ -250,7 +250,6 @@ def create_product():
 # =========================================================
 
 @products_bp.get("")
-@role_required("admin", "employee")
 def get_products():
     """
     Return products.
@@ -380,7 +379,6 @@ def search_products():
 # =========================================================
 
 @products_bp.get("/<string:product_id>")
-@role_required("admin", "employee")
 def get_product(product_id):
     """
     Return one product.
@@ -694,4 +692,88 @@ def deactivate_product(product_id):
         "success": True,
         "message": "Product deactivated successfully.",
         "product": serialize_product(product)
+    }), 200
+
+
+
+# =========================================================
+# PUBLIC PRODUCT AVAILABILITY BY BRANCH
+# =========================================================
+
+@products_bp.get("/<string:product_id>/availability")
+def get_public_product_availability(product_id):
+    """
+    Return sellable stock and the starting selling price
+    for a product at a selected active branch.
+
+    Public response deliberately excludes inventory costs,
+    batch identifiers, employee details, and profit data.
+    """
+
+    branch_id = request.args.get("branch_id", "").strip()
+
+    if not branch_id:
+        return jsonify({
+            "success": False,
+            "message": "Please select a branch."
+        }), 400
+
+    product = db.session.get(Product, product_id)
+
+    if not product or not product.is_active:
+        return jsonify({
+            "success": False,
+            "message": "Product not found."
+        }), 404
+
+    branch = db.session.get(Branch, branch_id)
+
+    if not branch or not branch.is_active:
+        return jsonify({
+            "success": False,
+            "message": "Selected branch is unavailable."
+        }), 404
+
+    batches = InventoryBatch.query.filter(
+        InventoryBatch.product_id == product.id,
+        InventoryBatch.branch_id == branch.id,
+        InventoryBatch.status == "ACTIVE",
+        InventoryBatch.quantity_remaining > 0
+    ).order_by(
+        InventoryBatch.selling_price.asc(),
+        InventoryBatch.received_at.asc()
+    ).all()
+
+    quantity = sum(
+        (
+            Decimal(str(batch.quantity_remaining))
+            for batch in batches
+        ),
+        Decimal("0")
+    )
+
+    # The lowest price among currently available batches.
+    # The storefront should label this price "From".
+    price_from = (
+        Decimal(str(batches[0].selling_price))
+        if batches
+        else None
+    )
+
+    return jsonify({
+        "success": True,
+        "product_id": product.id,
+        "branch": {
+            "id": branch.id,
+            "name": branch.name,
+            "location": branch.location,
+        },
+        "unit": product.unit,
+        "quantity": float(quantity),
+        "is_available": quantity > 0,
+        "price_from": (
+            float(price_from)
+            if price_from is not None
+            else None
+        ),
     }), 200
