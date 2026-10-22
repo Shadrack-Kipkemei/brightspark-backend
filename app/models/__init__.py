@@ -21,3 +21,6 @@ from app.models.stock_transfer import StockTransfer, StockTransferItem
 
 # Notification model
 from app.models.notification import Notification
+
+# Public customer orders
+from app.models.customer_order import CustomerOrder, CustomerOrderItem
