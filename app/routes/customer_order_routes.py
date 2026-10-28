@@ -597,3 +597,113 @@ def update_customer_order_status(order_id):
         ),
         "order": serialize_order(order),
     }), 200
+
+
+
+# =========================================================
+# STAFF: FULFIL A CONFIRMED ORDER
+# =========================================================
+
+@customer_orders_bp.post("/<string:order_id>/fulfil")
+@role_required("admin", "employee")
+def fulfil_customer_order_route(order_id):
+    """
+    Convert a confirmed customer order into a sale.
+
+    The request contains payment details only.
+    Products, quantities and prices come from the saved order.
+    """
+
+    from app.services.customer_order_fulfilment_service import (
+        fulfil_customer_order,
+    )
+
+    order = db.session.get(CustomerOrder, order_id)
+
+    if not order:
+        return jsonify({
+            "success": False,
+            "message": "Customer order not found.",
+        }), 404
+
+    if not staff_can_access_order(order):
+        return jsonify({
+            "success": False,
+            "message": (
+                "You cannot fulfil orders belonging to another branch."
+            ),
+        }), 403
+
+    if order.status != "CONFIRMED":
+        return jsonify({
+            "success": False,
+            "message": (
+                "Only confirmed orders can be fulfilled. "
+                f"Current status: {order.status}."
+            ),
+        }), 409
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "success": False,
+            "message": "Please provide a valid JSON request.",
+        }), 400
+
+    # Intentionally accept payment details only.
+    # Never accept replacement products, quantities or prices here.
+    if "items" in data or "total_amount" in data:
+        return jsonify({
+            "success": False,
+            "message": (
+                "Items and prices are taken from the saved order. "
+                "Submit payment details only."
+            ),
+        }), 400
+
+    try:
+        sale = fulfil_customer_order(
+            order_id=order_id,
+            payments=data.get("payments"),
+        )
+
+        return jsonify({
+            "success": True,
+            "message": (
+                "Customer order fulfilled successfully. "
+                "The sale and payments have been recorded."
+            ),
+            "order": serialize_order(
+                db.session.get(CustomerOrder, order_id)
+            ),
+            "sale": {
+                "id": sale.id,
+                "customer_order_id": sale.customer_order_id,
+                "branch_id": sale.branch_id,
+                "employee_id": sale.employee_id,
+                "total_amount": float(sale.total_amount),
+                "total_cost": float(sale.total_cost),
+                "gross_profit": float(sale.gross_profit),
+                "status": sale.status,
+            },
+        }), 201
+
+    except ValueError as error:
+        db.session.rollback()
+
+        return jsonify({
+            "success": False,
+            "message": str(error),
+        }), 400
+
+    except Exception:
+        db.session.rollback()
+
+        return jsonify({
+            "success": False,
+            "message": (
+                "An unexpected error occurred while fulfilling "
+                "the customer order. No partial sale was saved."
+            ),
+        }), 500

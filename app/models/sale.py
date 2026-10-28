@@ -44,6 +44,14 @@ class Sale(db.Model):
         nullable=True
     )
 
+    customer_order_id = db.Column(
+        db.String(36),
+        db.ForeignKey("customer_orders.id"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
     # Total amount actually charged to the customer.
     # This is based on the actual selling prices entered during the sale.
     total_amount = db.Column(
@@ -112,6 +120,12 @@ class Sale(db.Model):
         foreign_keys=[employee_id],
         backref=db.backref("sales", lazy=True)
     )
+
+    customer_order = db.relationship(
+        "CustomerOrder",
+        back_populates="sale",
+        foreign_keys=[customer_order_id],
+    )   
 
     # A sale can contain multiple products.
     items = db.relationship(

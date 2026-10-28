@@ -128,6 +128,13 @@ class CustomerOrder(db.Model):
         lazy=True
     )
 
+    sale = db.relationship(
+        "Sale",
+        back_populates="customer_order",
+        uselist=False,
+        foreign_keys="Sale.customer_order_id",
+    )
+
     def __repr__(self):
         return f"<CustomerOrder {self.order_reference}>"
 
